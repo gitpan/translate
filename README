@@ -1,0 +1,7 @@
+This is `translate' v0.01
+
+A translation script that goes to Altavista Babelfish page
+and tries to translate a word from english to some foreign languages.
+
+2002/03/11 cosimo@cpan.org
+

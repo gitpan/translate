@@ -1,0 +1,68 @@
+#!/usr/bin/perl
+#
+# Altavista babelfish translation scripts
+#
+# Translates an english word in italian,german,french and spanish
+# Use it at your own risk
+#
+# 2002/03/11 cosimo@cpan.org
+#
+
+$VERSION = '0.01';
+
+die <<USAGE unless @ARGV;
+$0 $VERSION - translate with babelfish
+usage:    $0 <text> [language]
+examples: $0 kitchen
+          $0 door en_it
+          $0 page en_de
+USAGE
+
+my ($text, $lng) = @ARGV;
+
+my @languages = qw/ en_zh en_fr en_de en_it en_ja en_ko en_pt en_es zh_en fr_en fr_de de_en de_fr it_en ja_en ko_en pt_en ru_en es_en /;
+my %langdesc = ( en => 'english', zh => 'chinese', fr => 'french', de => 'german', it => 'italian', ja => 'japanese', ko => 'korean', pt => 'portuguese', ru => 'russian', es => 'spanish' );
+my @default_translations;
+
+if( $lng ) {
+	die "`$lng' is not a correct language!" unless grep $lng, @languages;
+	@default_translations = ( $lng );
+} else {
+	@default_translations = ( 'en_it', 'en_de', 'en_fr', 'en_es' );
+}
+
+foreach ( @default_translations ) {
+	my $ttext = call_translate( $_, $text );
+
+	my($t, $outlng) = split '_', $_;
+	printf "%-10s `%s'\n", $langdesc{$outlng}, $ttext;
+
+}
+
+sub call_translate($;$) {
+	use LWP::Simple;
+	my( $lng, $text ) = @_;
+
+#	print STDERR 'starting translate of `'.$text.'\' into `'.$lng.'\' language...';
+
+	my $url = 'http://babelfish.altavista.com/tr?doit=done&urltext=%s&lp=%s&tt=urltext';
+	my @babelfish_page = split /\r?\n/, get( sprintf( $url, $text, $lng ) );
+	my $translation = '';
+
+#	print 'dump of babelfish page', "\n", join("\n", @babelfish_page), "\n";
+
+	# search through page the translation
+	while( @babelfish_page ) {
+		local $_ = shift @babelfish_page;
+		if( /textarea/ && /name="q">(.+)/i ) {
+			$translation = $1;
+			while( ($_ = shift @babelfish_page) !~ /<\/textarea>/i ) {
+				$translation .= $_;
+			}
+			last;
+		}
+	}
+
+	$translation;
+}
+
